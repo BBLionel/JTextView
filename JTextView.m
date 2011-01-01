@@ -48,8 +48,12 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 		_editable = NO;
 		_dataDetectorTypes = UIDataDetectorTypeNone;
 		caret = [[JTextCaret alloc] initWithFrame:CGRectZero];
+		// Handled for things like editing, and tapping links the data detector made
 		UITapGestureRecognizer* tap = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(receivedTap:)] autorelease];
 		[self addGestureRecognizer:tap];
+		// Handled for text selection
+		UILongPressGestureRecognizer* longPress = [[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(receivedLongPress:)] autorelease];
+		[self addGestureRecognizer:longPress];
     }
     return self;
 }
@@ -70,7 +74,15 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 
 - (BOOL)canBecomeFirstResponder
 {
-	return self.editable;
+	return YES;
+}
+
+
+- (BOOL)canPerformAction:(SEL)selector withSender:(id)sender
+{
+	if(selector == @selector(select:) || selector == @selector(selectAll:) || selector == @selector(copy:))
+		return YES;
+	return NO;
 }
 
 
@@ -111,6 +123,25 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 	CFRelease(framesetter);
 	CTFrameDraw(textFrame, context);
 	UIGraphicsPushContext(context);
+}
+
+
+#pragma mark -
+#pragma mark Selection
+
+
+- (void)select:(id)sender
+{
+}
+
+
+- (void)selectAll:(id)sender
+{
+}
+
+
+- (void)copy:(id)sender
+{
 }
 
 
@@ -202,6 +233,10 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 
 - (void)receivedTap:(UITapGestureRecognizer*)recognizer
 {
+	UIMenuController* menu = [UIMenuController sharedMenuController];
+	if(menu.menuVisible)
+		[menu setMenuVisible:NO animated:YES];
+
 	if(self.editable)
 	{
 		[self becomeFirstResponder];
@@ -283,6 +318,24 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 				//}
 			}
 		}
+	}
+}
+
+
+- (void)receivedLongPress:(UILongPressGestureRecognizer*)recognizer
+{
+	UIMenuController* menu = [UIMenuController sharedMenuController];
+	if(recognizer.state == UIGestureRecognizerStateBegan)
+	{
+		NSLog(@"long press received");
+		CGPoint location = [recognizer locationInView:recognizer.view];
+		NSAssert([self becomeFirstResponder], @"Sorry, UIMenuController will not work with %@ since it cannot become first responder", self);
+		[menu setTargetRect:CGRectMake(location.x, location.y, 0.0f, 0.0f) inView:recognizer.view];
+		menu.menuItems = [NSArray arrayWithObjects:
+						  [[[UIMenuItem alloc] initWithTitle:@"Select" action:@selector(selectItemTapped:)] autorelease],
+						  [[[UIMenuItem alloc] initWithTitle:@"Select All" action:@selector(selectAllItemItapped:)] autorelease],
+						  nil];
+		[menu setMenuVisible:YES animated:YES];
 	}
 }
 
