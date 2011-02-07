@@ -32,6 +32,7 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 @synthesize textColor = _textColor;
 @synthesize editable = _editable;
 @synthesize dataDetectorTypes = _dataDetectorTypes;
+@synthesize selectedRange = _selectedRange;
 
 
 #pragma mark -
@@ -47,6 +48,7 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 		_font = [[UIFont systemFontOfSize:16.0f] retain];
 		_editable = NO;
 		_dataDetectorTypes = UIDataDetectorTypeNone;
+		_selectedRange = NSMakeRange(0, 0);
 		caret = [[JTextCaret alloc] initWithFrame:CGRectZero];
 		// Handled for things like editing, and tapping links the data detector made
 		UITapGestureRecognizer* tap = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(receivedTap:)] autorelease];
@@ -137,6 +139,7 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 
 - (void)selectAll:(id)sender
 {
+	self.selectedRange = NSMakeRange(0, [self.attributedText length]);
 }
 
 

@@ -21,6 +21,10 @@
 	// Data detectors should also allow you to supply a style you want to use for different types of
 	// detectors. This is not yet implemented, but will be.
 	UIDataDetectorTypes _dataDetectorTypes;
+	
+	// Text selection. This range is populated with the location of the selection.
+	NSRange _selectedRange;
+	
 @private
 	JTextCaret* caret;
 	CTFrameRef textFrame;
@@ -32,6 +36,7 @@
 @property (nonatomic, retain) UIFont* font;
 @property (nonatomic, getter=isEditable) BOOL editable;
 @property (nonatomic) UIDataDetectorTypes dataDetectorTypes;
+@property (nonatomic) NSRange selectedRange;
 
 
 @end
