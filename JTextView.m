@@ -32,6 +32,7 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 @synthesize textColor = _textColor;
 @synthesize editable = _editable;
 @synthesize dataDetectorTypes = _dataDetectorTypes;
+@synthesize delegate = _delegate;
 
 
 #pragma mark -
@@ -47,6 +48,7 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 		_font = [[UIFont systemFontOfSize:[UIFont systemFontSize]] retain];
 		_editable = NO;
 		_dataDetectorTypes = UIDataDetectorTypeNone;
+		_delegate = nil;
 		caret = [[JTextCaret alloc] initWithFrame:CGRectZero];
 		UITapGestureRecognizer* tap = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(receivedTap:)] autorelease];
 		[self addGestureRecognizer:tap];
@@ -152,9 +154,9 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 
 - (void)dataDetectorPassInRange:(NSRange)range
 {
-	if (!self.dataDetectorTypes) {
+	if (!self.dataDetectorTypes)
 		return;
-	}
+
 	NSError* error = NULL;
 	NSDataDetector* detector = [NSDataDetector dataDetectorWithTypes:self.dataDetectorTypes error:&error];
 	NSAssert(error == nil, @"Problem creating the link detector: %@", [error localizedDescription]);
@@ -173,19 +175,28 @@ static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetect
 			case NSTextCheckingTypeLink:
 			{
 				NSURL* url = [match URL];
-				[self.attributedText addAttribute:kJTextViewDataDetectorLinkKey value:url range:matchRange];
+				if([self.delegate respondsToSelector:@selector(jTextView:didReceiveURL:range:)])
+					[self.delegate jTextView:self didReceiveURL:url range:matchRange];
+				else
+					[self.attributedText addAttribute:kJTextViewDataDetectorLinkKey value:url range:matchRange];
 				break;
 			}
 			case NSTextCheckingTypePhoneNumber:
 			{
 				NSString* phoneNumber = [match phoneNumber];
-				[self.attributedText addAttribute:kJTextViewDataDetectorPhoneNumberKey value:phoneNumber range:matchRange];
+				if([self.delegate respondsToSelector:@selector(jTextView:didReceivePhoneNumber:range:)])
+					[self.delegate jTextView:self didReceivePhoneNumber:phoneNumber range:matchRange];
+				else
+					[self.attributedText addAttribute:kJTextViewDataDetectorPhoneNumberKey value:phoneNumber range:matchRange];
 				break;
 			}
 			case NSTextCheckingTypeAddress:
 			{
 				NSDictionary* addressComponents = [match addressComponents];
-				[self.attributedText addAttribute:kJTextViewDataDetectorAddressKey value:addressComponents range:matchRange];
+				if([self.delegate respondsToSelector:@selector(jTextView:didReceiveAddress:range:)])
+					[self.delegate jTextView:self didReceiveAddress:addressComponents range:matchRange];
+				else
+					[self.attributedText addAttribute:kJTextViewDataDetectorAddressKey value:addressComponents range:matchRange];
 				break;
 			}
 			case NSTextCheckingTypeDate:

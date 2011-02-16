@@ -11,6 +11,17 @@
 #import "JTextCaret.h"
 
 
+@class JTextView;
+
+
+@protocol JTextViewDelegate
+@optional
+- (void)jTextView:(JTextView*)textView didReceiveURL:(NSURL*)url range:(NSRange)range;
+- (void)jTextView:(JTextView*)textView didReceivePhoneNumber:(NSString*)phoneNumber range:(NSRange)range;
+- (void)jTextView:(JTextView*)textView didReceiveAddress:(NSDictionary*)addressComponents range:(NSRange)range;
+@end
+
+
 @interface JTextView : UIScrollView <UIKeyInput>
 {
 	NSMutableAttributedString* _textStore;
@@ -18,9 +29,10 @@
 	UIFont* _font;
 	BOOL _editable;
 	
-	// Data detectors should also allow you to supply a style you want to use for different types of
-	// detectors. This is not yet implemented, but will be.
 	UIDataDetectorTypes _dataDetectorTypes;
+
+	id<JTextViewDelegate> _delegate;
+
 @private
 	JTextCaret* caret;
 	CTFrameRef textFrame;
@@ -32,6 +44,7 @@
 @property (nonatomic, retain) UIFont* font;
 @property (nonatomic, getter=isEditable) BOOL editable;
 @property (nonatomic) UIDataDetectorTypes dataDetectorTypes;
+@property (assign) id<JTextViewDelegate> delegate;
 
 
 @end
