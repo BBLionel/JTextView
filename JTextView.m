@@ -378,7 +378,7 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
         origin.y += origins[idx].y;
         bounds.origin = origin;
         
-		if(!CGRectContainsPoint(bounds, point))
+		if(!CGRectContainsPoint(CGRectInset(bounds, -10, -10), point))
         {
             continue;
         }
