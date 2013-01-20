@@ -192,6 +192,8 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
     {
         CFRelease(font);
     }
+    
+    [textStringToDraw addAttribute:(NSString*)kCTForegroundColorAttributeName value:(id)_textColor range:textRange];
 	
 	if(!self.editable)
 		[self dataDetectorPassInRange:textRange withAttributedString:textStringToDraw];
