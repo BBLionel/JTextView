@@ -57,15 +57,17 @@
 
 - (void)setStartPosition:(JTextPosition*)position
 {
+    [position retain];
 	[_start release];
-	_start = [position retain];
+	_start = (UITextPosition*)position;
 }
 
 
 - (void)setEndPosition:(JTextPosition*)position
 {
+    [position retain];
 	[_end release];
-	_end = [position retain];
+	_end = (UITextPosition*)position;
 }
 
 
