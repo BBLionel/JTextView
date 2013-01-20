@@ -281,7 +281,7 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 		return;
 
 	NSError* error = NULL;
-	NSDataDetector* detector = [NSDataDetector dataDetectorWithTypes:NSTextCheckingTypeLink
+	NSDataDetector* detector = [NSDataDetector dataDetectorWithTypes:_dataDetectorTypes
                                                                error:&error];
 	NSAssert(error == nil, @"Problem creating the link detector: %@", [error localizedDescription]);
 	NSString* string = [attributedString string];
