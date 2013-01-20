@@ -14,7 +14,7 @@
 @class JTextView;
 
 
-@protocol JTextViewDelegate
+@protocol JTextViewDelegate <NSObject>
 @optional
 - (void)jTextView:(JTextView*)textView didSelectLink:(NSURL *)url;
 
