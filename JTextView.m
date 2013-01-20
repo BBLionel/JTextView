@@ -12,11 +12,10 @@
 
 static CGFloat const kJTextViewPaddingSize = 2.0f;
 
-static NSString* const kJTextViewDataDetectorLinkKey = @"kJTextViewDataDetectorLinkKey";
-static NSString* const kJTextViewDataDetectorPhoneNumberKey = @"kJTextViewDataDetectorPhoneNumberKey";
-static NSString* const kJTextViewDataDetectorDateKey = @"kJTextViewDataDetectorDateKey";
-static NSString* const kJTextViewDataDetectorAddressKey = @"kJTextViewDataDetectorAddressKey";
-static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeName";
+NSString* const JTextViewLinkAttributeName = @"JTextViewLinkAttributeName";
+NSString* const JTextViewPhoneNumberAttributeName = @"JTextViewPhoneNumberAttributeName";
+NSString* const JTextViewDateAttributeName = @"JTextViewDateAttributeName";
+NSString* const JTextViewAddressAttributeName = @"JTextViewAddressAttributeName";
 
 @interface JTextView (PrivateMethods)
 
@@ -195,9 +194,11 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
     
     [textStringToDraw addAttribute:(NSString*)kCTForegroundColorAttributeName value:(id)_textColor range:textRange];
 	
-	if(!self.editable)
+	if ( !self.editable ) {
+        [self processExistingAttributesInRange:textRange withAttributedString:textStringToDraw];
 		[self dataDetectorPassInRange:textRange withAttributedString:textStringToDraw];
-	    
+    }
+    
     CGContextTranslateCTM(context, 0, textSize.height);
 	CGContextScaleCTM(context, 1.0, -1.0);
 	CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1.0, 1.0));
@@ -268,9 +269,24 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 
 
 #pragma mark -
-#pragma mark Data detectors
+#pragma mark Data detectors and attribute processing
 
-- (void)dataDetectorPassInRange:(NSRange)range 
+- (void)markLinkInRange:(NSRange)range inAttributedString:(NSMutableAttributedString*)attributedString
+{
+    UIColor *linkColor = (_linkColor != nil) ? _linkColor : [UIColor blueColor];
+    
+    [attributedString addAttribute:(NSString*)kCTForegroundColorAttributeName
+                             value:(id)linkColor.CGColor
+                             range:range];
+    
+    if(_shouldUnderlineLinks) {
+        [attributedString addAttribute:(NSString*)kCTUnderlineStyleAttributeName
+                                 value:[NSNumber numberWithInt:kCTUnderlineStyleSingle]
+                                 range:range];
+    }
+}
+
+- (void)dataDetectorPassInRange:(NSRange)range
 {
     [self dataDetectorPassInRange:range withAttributedString:self.attributedText];
 }
@@ -291,21 +307,7 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 		// No way to call into Calendar, so don't detect dates
 		if([match resultType] != NSTextCheckingTypeDate)
 		{
-            UIColor *linkColor = (_linkColor != nil) ? _linkColor : [UIColor blueColor];
-            //This sentinel attribute will tell us that this is a link.
-            [attributedString addAttribute:kJTextViewLinkAttributeName 
-                                     value:[NSNull null]
-                                     range:matchRange];
-
-			[attributedString addAttribute:(NSString*)kCTForegroundColorAttributeName 
-                                     value:(id)linkColor.CGColor
-                                     range:matchRange];
-            
-            if(_shouldUnderlineLinks) {
-                [attributedString addAttribute:(NSString*)kCTUnderlineStyleAttributeName 
-                                         value:[NSNumber numberWithInt:kCTUnderlineStyleSingle] 
-                                         range:matchRange];
-            }
+            [self markLinkInRange:matchRange inAttributedString:attributedString];
 		}
 		switch([match resultType])
 		{
@@ -315,7 +317,7 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 				if([self.textViewDelegate respondsToSelector:@selector(jTextView:didReceiveURL:range:)])
 					[self.textViewDelegate jTextView:self didReceiveURL:url range:matchRange];
 				else
-					[attributedString addAttribute:kJTextViewDataDetectorLinkKey value:url range:matchRange];
+					[attributedString addAttribute:JTextViewLinkAttributeName value:url range:matchRange];
 				break;
 			}
 			case NSTextCheckingTypePhoneNumber:
@@ -324,7 +326,7 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 				if([self.textViewDelegate respondsToSelector:@selector(jTextView:didReceivePhoneNumber:range:)])
 					[self.textViewDelegate jTextView:self didReceivePhoneNumber:phoneNumber range:matchRange];
 				else
-					[attributedString addAttribute:kJTextViewDataDetectorPhoneNumberKey value:phoneNumber range:matchRange];
+					[attributedString addAttribute:JTextViewPhoneNumberAttributeName value:phoneNumber range:matchRange];
 				break;
 			}
 			case NSTextCheckingTypeAddress:
@@ -333,7 +335,7 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 				if([self.textViewDelegate respondsToSelector:@selector(jTextView:didReceiveAddress:range:)])
 					[self.textViewDelegate jTextView:self didReceiveAddress:addressComponents range:matchRange];
 				else
-					[attributedString addAttribute:kJTextViewDataDetectorAddressKey value:addressComponents range:matchRange];
+					[attributedString addAttribute:JTextViewAddressAttributeName value:addressComponents range:matchRange];
 				break;
 			}
 			case NSTextCheckingTypeDate:
@@ -342,8 +344,26 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
 				//[self.attributedText addAttribute:kJTextViewDataDetectorDateKey value:date range:matchRange];
 				break;
 			}
+            default:
+            {
+                
+            }
 		}
 	}];
+}
+
+- (void)processExistingAttributesInRange:(NSRange)range withAttributedString:(NSMutableAttributedString *)attributedString
+{
+    [attributedString enumerateAttributesInRange:range options:0 usingBlock:^(NSDictionary *attrs, NSRange range, BOOL *stop) {
+        if ( [attrs objectForKey:JTextViewLinkAttributeName]
+            || [attrs objectForKey:JTextViewDateAttributeName]
+            || [attrs objectForKey:JTextViewPhoneNumberAttributeName]
+            || [attrs objectForKey:JTextViewAddressAttributeName]) {
+            
+            // Assign visible attributes
+            [self markLinkInRange:range inAttributedString:attributedString];
+        }
+    }];
 }
 
 #pragma mark -
@@ -388,10 +408,9 @@ static NSString* const kJTextViewLinkAttributeName = @"kJTextViewLinkAttributeNa
         {
             CTRunRef run = CFArrayGetValueAtIndex(runs, j);
             NSDictionary* attributes = (NSDictionary*)CTRunGetAttributes(run);
-            BOOL result = NO;
-            NSURL* url = [attributes objectForKey:kJTextViewDataDetectorLinkKey];
-            NSString* phoneNumber = [attributes objectForKey:kJTextViewDataDetectorPhoneNumberKey];
-            NSDictionary* addressComponents = [attributes objectForKey:kJTextViewDataDetectorAddressKey];
+            NSURL* url = [attributes objectForKey:JTextViewLinkAttributeName];
+            NSString* phoneNumber = [attributes objectForKey:JTextViewPhoneNumberAttributeName];
+            NSDictionary* addressComponents = [attributes objectForKey:JTextViewAddressAttributeName];
             //NSDate* date = [attributes objectForKey:kJTextViewDataDetectorDateKey];
             if(url)
             {

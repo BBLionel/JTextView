@@ -10,6 +10,10 @@
 #import <CoreText/CoreText.h>
 #import "JTextCaret.h"
 
+extern NSString* const JTextViewLinkAttributeName;
+extern NSString* const JTextViewPhoneNumberAttributeName;
+extern NSString* const JTextViewDateAttributeName;
+extern NSString* const JTextViewAddressAttributeName;
 
 @class JTextView;
 
